@@ -1,0 +1,24 @@
+{
+  "name": "get_weather",
+  "description": "Get current weather information for a city using wttr.in service",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "The city name to get weather for"
+      },
+      "format": {
+        "type": "string",
+        "description": "Weather format (1=current, 2=current+today, 3=current+today+tomorrow)",
+        "default": "2"
+      }
+    },
+    "required": ["city"]
+  },
+  "execution": {
+    "type": "script",
+    "command": "curl -s 'https://wttr.in/{city}?format={format}&m'",
+    "timeout": 15
+  }
+}

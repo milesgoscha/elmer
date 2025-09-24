@@ -1,0 +1,20 @@
+{
+  "name": "list_files",
+  "description": "List files in a directory (restricted to user's home directory for security)",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Directory path to list (relative to home directory, e.g., 'Documents', 'Desktop')",
+        "default": "."
+      }
+    },
+    "required": []
+  },
+  "execution": {
+    "type": "script",
+    "command": "ls -la ~/{path}",
+    "timeout": 10
+  }
+}

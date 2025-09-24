@@ -1,0 +1,14 @@
+{
+  "name": "get_system_info",
+  "description": "Get basic system information about the Mac",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "execution": {
+    "type": "script",
+    "command": "echo 'System: '$(uname -s)' '$(uname -r)' ('$(uname -m)')' && echo 'Uptime: '$(uptime | cut -d',' -f1 | cut -d' ' -f4-) && echo 'Memory:' && top -l 1 -s 0 | grep PhysMem",
+    "timeout": 10
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "get_current_time",
+  "description": "Get the current date and time",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "execution": {
+    "type": "script",
+    "command": "date",
+    "timeout": 5
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "calculate",
+  "description": "Perform mathematical calculations using bc calculator",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "expression": {
+        "type": "string",
+        "description": "Mathematical expression to calculate (e.g., '2+2', 'sqrt(16)', 'sin(3.14/2)')"
+      }
+    },
+    "required": ["expression"]
+  },
+  "execution": {
+    "type": "script",
+    "command": "echo '{expression}' | bc -l",
+    "timeout": 10
+  }
+}

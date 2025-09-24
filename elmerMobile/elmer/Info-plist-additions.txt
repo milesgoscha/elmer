@@ -1,0 +1,20 @@
+# Add these entries to your Info.plist or Project Settings
+
+## Required for QR Code Scanner (Camera Access)
+NSCameraUsageDescription: "Scan QR codes to connect to AI services"
+
+## Required for Saving Generated Images
+NSPhotoLibraryAddUsageDescription: "Save generated images to your photo library"
+
+## Required for Network Requests to Tunnel URLs
+NSAppTransportSecurity:
+  NSAllowsArbitraryLoads: true
+
+# Instructions:
+# 1. In Xcode, select your project
+# 2. Go to the "elmer" target
+# 3. Go to "Info" tab
+# 4. Add these privacy usage descriptions:
+#    - Privacy - Camera Usage Description: "Scan QR codes to connect to AI services"
+#    - Privacy - Photo Library Additions Usage Description: "Save generated images to your photo library"
+# 5. Add App Transport Security setting to allow arbitrary loads (for tunnel URLs)
