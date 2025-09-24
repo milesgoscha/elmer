@@ -39,14 +39,19 @@ struct ChatView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Messages Area
-            messagesView
-            
-            // Input Area
-            chatInput
+        ZStack {
+            // Full background that extends everywhere
+            ElmeriOSTheme.backgroundColor
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Messages Area
+                messagesView
+
+                // Input Area
+                chatInput
+            }
         }
-        .background(ElmeriOSTheme.backgroundColor)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
         .onChange(of: selectedImageItem) { _, _ in

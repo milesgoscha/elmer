@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 
 struct ComfyUIView: View {
     let service: RemoteService
@@ -425,27 +426,57 @@ struct GeneratedImageCard: View {
     let imageURL: String
     let prompt: String
     let timestamp: Date
-    
+    @State private var loadedImage: UIImage?
+    @State private var showingSaveAlert = false
+    @State private var saveAlertMessage = ""
+
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
         return formatter
     }
-    
+
     var body: some View {
         VStack(spacing: 12) {
-            AsyncImage(url: URL(string: imageURL)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } placeholder: {
-                Rectangle()
-                    .fill(ElmeriOSTheme.surfaceColor)
-                    .overlay(
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: ElmeriOSTheme.textSecondary))
-                    )
+            AsyncImage(url: URL(string: imageURL)) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .onAppear {
+                            // Capture the UIImage when it loads
+                            Task {
+                                if let url = URL(string: imageURL),
+                                   let (data, _) = try? await URLSession.shared.data(from: url),
+                                   let uiImage = UIImage(data: data) {
+                                    loadedImage = uiImage
+                                }
+                            }
+                        }
+                case .empty:
+                    Rectangle()
+                        .fill(ElmeriOSTheme.surfaceColor)
+                        .overlay(
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: ElmeriOSTheme.textSecondary))
+                        )
+                case .failure(_):
+                    Rectangle()
+                        .fill(ElmeriOSTheme.surfaceColor)
+                        .overlay(
+                            VStack {
+                                Image(systemName: "photo")
+                                    .foregroundColor(ElmeriOSTheme.textTertiary)
+                                Text("Failed to load")
+                                    .font(.caption)
+                                    .foregroundColor(ElmeriOSTheme.textTertiary)
+                            }
+                        )
+                @unknown default:
+                    EmptyView()
+                }
             }
             .frame(maxHeight: 400)
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -474,20 +505,72 @@ struct GeneratedImageCard: View {
             // Image actions
             HStack(spacing: 12) {
                 Button("Save to Photos") {
-                    // TODO: Implement save to photos
+                    if let image = loadedImage {
+                        saveImageToPhotos(image)
+                    }
                 }
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(ElmeriOSTheme.accentColor)
-                
+                .disabled(loadedImage == nil)
+
                 Spacer()
-                
+
                 Button("Share") {
-                    // TODO: Implement share
+                    if let image = loadedImage {
+                        shareImage(image)
+                    }
                 }
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(ElmeriOSTheme.accentColor)
+                .disabled(loadedImage == nil)
             }
         }
+        .alert("Save Image", isPresented: $showingSaveAlert) {
+            Button("OK") { }
+        } message: {
+            Text(saveAlertMessage)
+        }
+    }
+
+    private func saveImageToPhotos(_ image: UIImage) {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized, .limited:
+                    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                    saveAlertMessage = "Image saved to Photos"
+                    showingSaveAlert = true
+                case .denied, .restricted:
+                    saveAlertMessage = "Photo library access denied. Please enable in Settings."
+                    showingSaveAlert = true
+                case .notDetermined:
+                    saveAlertMessage = "Please grant photo library access to save images."
+                    showingSaveAlert = true
+                @unknown default:
+                    saveAlertMessage = "Unable to save image"
+                    showingSaveAlert = true
+                }
+            }
+        }
+    }
+
+    private func shareImage(_ image: UIImage) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else {
+            return
+        }
+
+        let activityController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+
+        // For iPad
+        if let popover = activityController.popoverPresentationController {
+            popover.sourceView = rootViewController.view
+            popover.sourceRect = CGRect(x: rootViewController.view.bounds.midX, y: rootViewController.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        rootViewController.present(activityController, animated: true)
     }
 }
 

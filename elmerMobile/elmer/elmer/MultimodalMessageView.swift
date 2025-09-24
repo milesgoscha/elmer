@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Photos
 
 // MARK: - Multimodal Message View
 struct MultimodalMessageView: View {
@@ -104,7 +105,9 @@ struct ImageDisplayView: View {
     let message: ChatMessage
     @Binding var loadedImage: UIImage?
     @Binding var isLoadingImage: Bool
-    
+    @State private var showingSaveAlert = false
+    @State private var saveAlertMessage = ""
+
     var body: some View {
         Group {
             if let image = loadedImage {
@@ -112,6 +115,19 @@ struct ImageDisplayView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .cornerRadius(12)
+                    .contextMenu {
+                        Button {
+                            saveImageToPhotos(image)
+                        } label: {
+                            Label("Save to Photos", systemImage: "square.and.arrow.down")
+                        }
+
+                        Button {
+                            shareImage(image)
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    }
             } else if isLoadingImage {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
@@ -139,6 +155,52 @@ struct ImageDisplayView: View {
         .onAppear {
             loadImageIfNeeded()
         }
+        .alert("Save Image", isPresented: $showingSaveAlert) {
+            Button("OK") { }
+        } message: {
+            Text(saveAlertMessage)
+        }
+    }
+
+    private func saveImageToPhotos(_ image: UIImage) {
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized, .limited:
+                    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                    saveAlertMessage = "Image saved to Photos"
+                    showingSaveAlert = true
+                case .denied, .restricted:
+                    saveAlertMessage = "Photo library access denied. Please enable in Settings."
+                    showingSaveAlert = true
+                case .notDetermined:
+                    saveAlertMessage = "Please grant photo library access to save images."
+                    showingSaveAlert = true
+                @unknown default:
+                    saveAlertMessage = "Unable to save image"
+                    showingSaveAlert = true
+                }
+            }
+        }
+    }
+
+    private func shareImage(_ image: UIImage) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else {
+            return
+        }
+
+        let activityController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+
+        // For iPad
+        if let popover = activityController.popoverPresentationController {
+            popover.sourceView = rootViewController.view
+            popover.sourceRect = CGRect(x: rootViewController.view.bounds.midX, y: rootViewController.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        rootViewController.present(activityController, animated: true)
     }
     
     private func loadImageIfNeeded() {

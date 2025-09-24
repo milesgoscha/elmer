@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+// MARK: - Height Preference Key for dynamic text field sizing
+struct HeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 35
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 // MARK: - Themed Message Bubble
 struct ThemedMessageBubble: View {
     let message: ChatMessage
@@ -50,11 +58,11 @@ struct ThemedChatInput<LeadingContent: View>: View {
     let isLoading: Bool
     let canSend: Bool
     @ViewBuilder let leadingContent: () -> LeadingContent
-    
-    init(text: Binding<String>, 
-         onSend: @escaping () -> Void, 
-         isLoading: Bool, 
-         canSend: Bool, 
+
+    init(text: Binding<String>,
+         onSend: @escaping () -> Void,
+         isLoading: Bool,
+         canSend: Bool,
          @ViewBuilder leadingContent: @escaping () -> LeadingContent = { EmptyView() }) {
         self._text = text
         self.onSend = onSend
@@ -62,15 +70,16 @@ struct ThemedChatInput<LeadingContent: View>: View {
         self.canSend = canSend
         self.leadingContent = leadingContent
     }
-    
+
     var body: some View {
         HStack(spacing: 12) {
             HStack(spacing: 8) {
                 leadingContent()
-                
-                TextField("Message", text: $text)
+
+                TextField("Message", text: $text, axis: .vertical)
                     .font(.system(size: 15, weight: .regular))
                     .foregroundColor(ElmeriOSTheme.textColor)
+                    .lineLimit(1...5) // Grow from 1 to 5 lines
                     .submitLabel(.send)
                     .onSubmit {
                         if canSend && !text.isEmpty {
@@ -88,7 +97,7 @@ struct ThemedChatInput<LeadingContent: View>: View {
                             .stroke(ElmeriOSTheme.borderColor, lineWidth: 1)
                     )
             )
-            
+
             Button(action: onSend) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
